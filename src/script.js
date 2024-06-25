@@ -1,69 +1,80 @@
 const express = require('express');
-const fileUpload = require('express-fileupload');
-const xlsx = require('xlsx');
 const axios = require('axios');
+const multer = require('multer');
+const xlsx = require('xlsx');
+const bodyParser = require('body-parser');
+
 const app = express();
-const port = 3000;
+const upload = multer();
+const PORT = 5000;
 
-app.use(fileUpload());
+// Thay thế bằng các thông tin thực tế của bạn
+const ZOHO_CLIENT_ID = '1004.SDIKK4HI5EAIML6YP9PPUJQP7F6KRN';
+const ZOHO_CLIENT_SECRET = 'a7568f3f3bab8acfe03e04f4c4989612a556e61694';
+const ZOHO_ACCESS_TOKEN = 'mdOJSjd0s9wFqrP';
 
-app.post('/upload', async (req, res) => {
-  if (!req.files || Object.keys(req.files).length === 0) {
-    return res.status(400).send('No files were uploaded.');
-  }
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-  const file = req.files.file;
-  const workbook = xlsx.read(file.data, { type: 'buffer' });
-  const sheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[sheetName];
-  const data = xlsx.utils.sheet_to_json(worksheet);
+// Tạo alias email từ form nhập liệu
+app.post('/create-email', async (req, res) => {
+    const { firstName, lastName, host } = req.body;
+    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${host}`;
+    
+    try {
+        const response = await axios.post(
+            ZOHO_API_URL.replace("{account_id}", ZOHO_ACCOUNT_ID),
+            { email: email },
+            {
+                headers: {
+                    Authorization: `mdOJSjd0s9wFqrP ${ZOHO_API_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error creating email:', error);
+        res.status(error.response.status).json(error.response.data);
+    }
+});
 
-  // Process each row in the Excel file
-  for (const row of data) {
-    const { FirstName, LastName } = row;
-    const alias = `${FirstName}.${LastName}@platihub.com`.toLowerCase();
+// Tạo alias email từ tệp Excel
+app.post('/upload-emails', upload.single('file'), async (req, res) => {
+    const file = req.file;
+
+    if (!file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
 
     try {
-      await createZohoAlias(FirstName, LastName, alias);
+        const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const data = xlsx.utils.sheet_to_json(sheet);
+
+        const emailPromises = data.map(async (row) => {
+            const email = `${row.firstName.toLowerCase()}.${row.lastName.toLowerCase()}@${row.host}`;
+            return axios.post(
+                ZOHO_API_URL.replace("{account_id}", ZOHO_ACCOUNT_ID),
+                { email: email },
+                {
+                    headers: {
+                        Authorization: `Zoho-authtoken ${ZOHO_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        });
+
+        const results = await Promise.all(emailPromises);
+        res.json(results.map(result => result.data));
     } catch (error) {
-      console.error('Error creating alias for', alias, ':', error);
+        console.error('Error', error);
+        res.status(500).json({ error: 'Failed to process file' });
     }
-  }
-
-  res.send({ message: 'File uploaded and aliases created successfully' });
 });
 
-const createZohoAlias = async (firstName, lastName, alias) => {
-const zohoApiUrl = 'https://www.zohoapis.com/your_api_endpoint'; // Endpoint ???
-const apiKey = 'your_zoho_api_key'; // zoho api key >> cần generate key để đe
-
-  const response = await axios.post(
-    zohoApiUrl,
-    {
-      firstName,
-      lastName,
-      alias,
-    },
-    {
-      headers: {
-        Authorization: `Zoho-oauthtoken ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-    }
-  );
-
-  if (response.status !== 200) {
-    throw new Error(`Error creating alias: ${response.statusText}`);
-  }
-
-  return response.data;
-};
-
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
-
-app.use(cors({
-    origin: 'http://localhost:3001',
-    credentials: true, 
-  }));

@@ -15,22 +15,18 @@
       <h1 class="display-5 mb-5"><strong>BULK EMAIL</strong></h1>
     </div>
     <div class="main row justify-content-center">
-      <form action="" id="student-form" class="row justify-content-center mb-4" autocomplete="off">
+      <form id="student-form" class="row justify-content-center mb-4" autocomplete="off">
         <div class="col-10 col-md-8 mb-3">
           <label for="firstName">First Name</label>
-          <input class="form-control" id="firstName" type="text" placeholder="Enter First Name">
+          <input class="form-control" id="firstName" type="text" placeholder="Enter First Name" required>
         </div>
         <div class="col-10 col-md-8 mb-3">
           <label for="lastName">Last Name</label>
-          <input class="form-control" id="LastName" type="text" placeholder="Enter Last Name">
+          <input class="form-control" id="lastName" type="text" placeholder="Enter Last Name" required>
         </div>
         <div class="col-10 col-md-8 mb-3">
-          <label for="rollNo">Roll No</label>
-          <input class="form-control" id="rollNo" type="text" placeholder="Enter Roll No">
-        </div>
-        <div class="col-10 col-md-8 mb-3">
-          <label for="hostEmail">Host email</label>
-          <input class="form-control" id="hostEmail" type="text" placeholder="Host Email">
+          <label for="hostEmail">Host Email</label>
+          <input class="form-control" id="hostEmail" type="text" placeholder="Host Email" required>
         </div>
         <div class="col-10 col-md-8 mb-3">
           <label for="excelFile">Upload Excel File</label>
@@ -46,7 +42,6 @@
             <tr>
               <th>First Name</th>
               <th>Last Name</th>
-              <th>Roll No</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -54,7 +49,6 @@
             <tr>
               <td>Dear</td>
               <td>Programmer</td>
-              <td>25</td>
               <td>
                 <a href="#" class="btn btn-warning btn-sm edit">Edit</a>
                 <a href="#" class="btn btn-danger btn-sm delete">Delete</a>
